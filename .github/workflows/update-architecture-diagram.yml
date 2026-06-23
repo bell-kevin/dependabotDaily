@@ -1,0 +1,42 @@
+name: Update Architecture Diagram
+
+on:
+  push:
+    branches:
+      - "**"
+    paths-ignore:
+      - docs/architecture.mmd
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-diagram:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Regenerate architecture diagram
+        run: python scripts/generate_architecture_diagram.py
+
+      - name: Commit diagram changes
+        run: |
+          if git diff --quiet -- docs/architecture.mmd; then
+            echo "No architecture diagram changes detected."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/architecture.mmd
+          git commit -m "chore: update architecture diagram"
+          git push

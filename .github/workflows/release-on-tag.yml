@@ -1,0 +1,53 @@
+name: Release (on SemVer tag)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history for tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate SemVer tag
+        id: semver
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"   # e.g., v1.2.3
+          echo "Tag is: $TAG"
+
+          # Strict-ish SemVer: vMAJOR.MINOR.PATCH with optional prerelease/build
+          # Examples allowed:
+          # v1.2.3
+          # v1.2.3-alpha.1
+          # v1.2.3-rc.1+build.7
+          if [[ ! "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Tag '$TAG' is not valid SemVer (expected vMAJOR.MINOR.PATCH...)."
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create source snapshot zip (optional)
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.semver.outputs.tag }}"
+          zip -r "source-${TAG}.zip" . \
+            -x ".git/*" ".github/*/cache/*" "node_modules/*" "**/bin/*" "**/obj/*"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.semver.outputs.tag }}
+          name: ${{ steps.semver.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            source-${{ steps.semver.outputs.tag }}.zip

@@ -1,0 +1,33 @@
+name: CI (Generic)
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Basic repo checks
+        run: |
+          set -euo pipefail
+          echo "Branch: ${GITHUB_REF}"
+          test -f README.md || (echo "Missing README.md" && exit 1)
+
+      - name: Lightweight secret pattern scan (best-effort)
+        run: |
+          set -euo pipefail
+          # This is NOT a full secret scanner; it's a beginner-friendly tripwire.
+          # Add more patterns as you like.
+          if grep -RIn --exclude-dir=.git --exclude-dir=node_modules \
+            -E "(AWS_SECRET_ACCESS_KEY|BEGIN PRIVATE KEY|xox[baprs]-|ghp_[A-Za-z0-9]{20,})" .; then
+            echo "Potential secret detected. Remove it before merging."
+            exit 1
+          fi
