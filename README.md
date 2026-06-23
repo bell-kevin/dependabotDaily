@@ -2,6 +2,8 @@
 
 # 
 
+scans all your repos, then prints a report grouped into ready to merge, needs attention (with the reason — conflict, behind base, failing check), and a security-alert summary. It's read-only by default
+
 --------------------------------------------------------------------------------------------------------------------------
 
 ## Automated architecture diagram
