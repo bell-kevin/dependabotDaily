@@ -3,6 +3,8 @@ title: Repository Architecture
 ---
 graph TD
     repo[(Repository)]
+    n_root["root\n1 files\nPython:1"]
+    repo --> n_root
     n_scripts["scripts\n1 files\nPython:1"]
     repo --> n_scripts
     docs[(Documentation)]
